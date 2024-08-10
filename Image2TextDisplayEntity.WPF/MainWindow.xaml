@@ -1,0 +1,618 @@
+﻿<Window x:Class="Image2TextDisplayEntity.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Image2TextDisplayEntity.WPF"
+        xmlns:myt="clr-namespace:Myitian.Controls"
+        xmlns:myt_conv="clr-namespace:Myitian.Converters"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
+        Title="IMG2TDE"
+        Width="800"
+        Height="500">
+  <Window.Resources>
+    <myt_conv:BooleanOrConverter x:Key="BooleanOrConverter" />
+    <myt_conv:BooleanNotConverter x:Key="BooleanNotConverter" />
+    <myt_conv:ComparisonConverter x:Key="ComparisonConverter" />
+    <myt_conv:DivideConverter x:Key="DivideConverter" />
+    <myt_conv:EnumIndexConverter x:Key="EnumIndexConverter" />
+    <myt_conv:TrueFalseConverter x:Key="TrueFalseConverter" />
+  </Window.Resources>
+  <Grid>
+    <Grid.Resources>
+      <Style TargetType="{x:Type Label}">
+        <Setter Property="Padding"
+                Value="2" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+      </Style>
+      <Style TargetType="{x:Type RadioButton}">
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+      </Style>
+      <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+      </Style>
+    </Grid.Resources>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="144" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="2*" />
+      <ColumnDefinition Width="1*" />
+    </Grid.ColumnDefinitions>
+    <DockPanel Grid.Row="0"
+               Grid.Column="0">
+      <DockPanel DockPanel.Dock="Bottom"
+                 LastChildFill="False">
+        <Button DockPanel.Dock="Right"
+                Width="80"
+                Content="生成"
+                IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}"
+                Click="B_Generate_Click" />
+        <Button DockPanel.Dock="Right"
+                Width="160"
+                Content="生成一箱（包含多层）"
+                IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}"
+                Click="B_GenerateBox_Click" />
+        <myt:NumericUpDown DockPanel.Dock="Right"
+                           Width="40"
+                           Height="20"
+                           MaxValue="27"
+                           MinValue="1"
+                           Value="{Binding ChestLayerCount, Mode=TwoWay}" />
+      </DockPanel>
+      <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto">
+        <StackPanel>
+          <GroupBox Header="源图">
+            <StackPanel>
+              <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="加载"
+                        Padding="10,2"
+                        Click="B_Load_Click"
+                        IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}" />
+                <Button DockPanel.Dock="Right"
+                        Content="浏览"
+                        Padding="10,2"
+                        Click="B_Browse_Click" />
+                <Canvas x:Name="C_TB_ImagePath_Wrapper">
+                  <TextBox Text="{Binding ImagePath, Mode=TwoWay}"
+                           Margin="0"
+                           Width="{Binding ActualWidth, ElementName=C_TB_ImagePath_Wrapper, Mode=OneWay}"
+                           Height="{Binding ActualHeight, ElementName=C_TB_ImagePath_Wrapper, Mode=OneWay}" />
+                </Canvas>
+              </DockPanel>
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition />
+                  <RowDefinition />
+                  <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0"
+                       Grid.Column="0"
+                       Content="当前加载：" />
+                <Canvas Grid.Row="0"
+                        Grid.Column="1"
+                        x:Name="C_L_CurrentImagePath_Wrapper">
+                  <Label Content="{Binding CurrentImagePath, Mode=OneWay}"
+                         Margin="0"
+                         Width="{Binding ActualWidth, ElementName=C_TB_SpawnEggName_Wrapper, Mode=OneWay}"
+                         Height="{Binding ActualHeight, ElementName=C_TB_SpawnEggName_Wrapper, Mode=OneWay}" />
+                </Canvas>
+                <Label Grid.Row="1"
+                       Grid.Column="0"
+                       Content="宽x高：" />
+                <StackPanel Grid.Row="1"
+                            Grid.Column="1"
+                            Orientation="Horizontal">
+                  <Label Content="{Binding BitmapSource.PixelWidth, Mode=OneWay}" />
+                  <Label Content="x" />
+                  <Label Content="{Binding BitmapSource.PixelHeight, Mode=OneWay}" />
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </GroupBox>
+          <GroupBox Header="预处理">
+            <Grid Grid.IsSharedSizeScope="True">
+              <Grid.RowDefinitions>
+                <RowDefinition SharedSizeGroup="_" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <CheckBox x:Name="CB_PreProcessing_Scale"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Content="缩放"
+                        Margin="0,0,20,0"
+                        IsChecked="{Binding NeedCrop, Mode=TwoWay}" />
+              <StackPanel Grid.Row="0"
+                          Grid.Column="1"
+                          IsEnabled="{Binding IsChecked, ElementName=CB_PreProcessing_Scale, Mode=OneWay, TargetNullValue=False}"
+                          Orientation="Horizontal">
+                <Label Content="目标宽：" />
+                <myt:NumericUpDown Width="60"
+                                   Height="20"
+                                   MinValue="1"
+                                   MaxValue="16384"
+                                   IntegerMode="True"
+                                   Value="{Binding TargetWidth, Mode=TwoWay}" />
+                <Label Margin="20,0,0,0"
+                       Content="目标高：" />
+                <myt:NumericUpDown Width="60"
+                                   Height="20"
+                                   MinValue="1"
+                                   MaxValue="16384"
+                                   IntegerMode="True"
+                                   Value="{Binding TargetHeight, Mode=TwoWay}" />
+                <CheckBox Content="保持比例"
+                          Margin="20,0,0,0"
+                          IsChecked="{Binding KeepScale, Mode=TwoWay}" />
+              </StackPanel>
+            </Grid>
+          </GroupBox>
+          <GroupBox Header="裁切模式">
+            <Grid Grid.IsSharedSizeScope="True">
+              <Grid.RowDefinitions>
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <RadioButton Grid.Row="0"
+                           Grid.Column="0"
+                           Content="全图"
+                           GroupName="CutMode"
+                           IsChecked="{Binding Path=CutMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CutMode.All}}"
+                           Margin="0,0,20,0" />
+              <RadioButton x:Name="RB_CutMode_Horizontal"
+                           Grid.Row="1"
+                           Grid.Column="0"
+                           Content="水平"
+                           GroupName="CutMode"
+                           IsChecked="{Binding Path=CutMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:CutMode.Horizontal}}" />
+              <StackPanel Grid.Row="1"
+                          Grid.Column="1"
+                          Orientation="Horizontal"
+                          IsEnabled="{Binding IsChecked, ElementName=RB_CutMode_Horizontal, Mode=OneWay, TargetNullValue=False}">
+                <Label Content="每层高度" />
+                <myt:NumericUpDown Width="50"
+                                   Height="20"
+                                   MinValue="1"
+                                   MaxValue="{Binding BitmapSource.PixelHeight, Mode=OneWay}"
+                                   Value="{Binding LayerHeight, Mode=TwoWay}"
+                                   IntegerMode="True" />
+                <Label Content="像素" />
+                <Label Margin="20,0,0,0"
+                       Content="第" />
+                <myt:NumericUpDown Width="50"
+                                   Height="20"
+                                   MinValue="1"
+                                   MaxValue="{Binding MaxLayer, Mode=OneWay}"
+                                   Value="{Binding Layer, Mode=TwoWay}"
+                                   IntegerMode="True" />
+                <Label Content="层" />
+                <Button Margin="5,0,0,0"
+                        Width="30"
+                        Content="--"
+                        Click="B_MinusChest_Click" />
+                <Button Width="30"
+                        Content="++"
+                        Click="B_AddChest_Click" />
+              </StackPanel>
+            </Grid>
+          </GroupBox>
+          <GroupBox Header="刷怪蛋物品名称文本">
+            <Canvas x:Name="C_TB_SpawnEggName_Wrapper"
+                    Height="72">
+              <TextBox TextWrapping="Wrap"
+                       Text="{Binding SpawnEggName, Mode=TwoWay}"
+                       Margin="0"
+                       Width="{Binding ActualWidth, ElementName=C_TB_SpawnEggName_Wrapper, Mode=OneWay}"
+                       Height="{Binding ActualHeight, ElementName=C_TB_SpawnEggName_Wrapper, Mode=OneWay}"
+                       VerticalScrollBarVisibility="Auto" />
+            </Canvas>
+          </GroupBox>
+          <GroupBox Header="朝向">
+            <Grid Grid.IsSharedSizeScope="True">
+              <Grid.RowDefinitions>
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <RadioButton x:Name="RB_Direction_FixedAxis"
+                           Grid.Row="0"
+                           Grid.Column="0"
+                           Content="固定朝向（坐标轴）"
+                           GroupName="Direction"
+                           Margin="0,0,20,0"
+                           IsChecked="{Binding Path=Direction, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:Direction.FixedAxis}}" />
+              <StackPanel Grid.Row="0"
+                          Grid.Column="1"
+                          Orientation="Horizontal"
+                          IsEnabled="{Binding IsChecked, ElementName=RB_Direction_FixedAxis, Mode=OneWay, TargetNullValue=False}">
+                <Label Margin="10,0,0,0"
+                       VerticalAlignment="Center"
+                       Content="水平朝向：" />
+                <ComboBox Width="60"
+                          Height="20"
+                          SelectedIndex="{Binding HorizontalDirection, Converter={StaticResource EnumIndexConverter}}">
+                  <ComboBoxItem Content="东 X+" />
+                  <ComboBoxItem Content="南 Z+" />
+                  <ComboBoxItem Content="西 X-" />
+                  <ComboBoxItem Content="北 Z-" />
+                </ComboBox>
+                <Label Margin="10,0,0,0"
+                       VerticalAlignment="Center"
+                       Content="垂直朝向：" />
+                <ComboBox Width="60"
+                          Height="20"
+                          SelectedIndex="{Binding VerticalDirection, Converter={StaticResource EnumIndexConverter}}">
+                  <ComboBoxItem Content="上面" />
+                  <ComboBoxItem Content="侧面" />
+                  <ComboBoxItem Content="下面" />
+                </ComboBox>
+              </StackPanel>
+              <RadioButton x:Name="RB_Direction_FixedCustom"
+                           Grid.Row="1"
+                           Grid.Column="0"
+                           Content="固定朝向（自定义）"
+                           GroupName="Direction"
+                           IsChecked="{Binding Path=Direction, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:Direction.FixedCustom}}" />
+              <RadioButton x:Name="RB_Direction_CanRotateAroundVerticalAxis"
+                           Grid.Row="2"
+                           Grid.Column="0"
+                           Content="固定垂直轴面向玩家"
+                           GroupName="Direction"
+                           IsChecked="{Binding Path=Direction, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:Direction.CanRotateAroundVerticalAxis}}" />
+              <RadioButton x:Name="RB_Direction_CanRotateAroundHorizontalAxis"
+                           Grid.Row="3"
+                           Grid.Column="0"
+                           Content="固定水平轴面向玩家"
+                           GroupName="Direction"
+                           IsChecked="{Binding Path=Direction, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:Direction.CanRotateAroundHorizontalAxis}}" />
+              <RadioButton Grid.Row="4"
+                           Grid.Column="0"
+                           Content="中心旋转面向玩家"
+                           GroupName="Direction"
+                           IsChecked="{Binding Path=Direction, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:Direction.FacingPlayer}}" />
+              <StackPanel x:Name="SP_Direction_Yaw"
+                          Grid.Row="5"
+                          Grid.Column="0"
+                          HorizontalAlignment="Right"
+                          Orientation="Horizontal">
+                <StackPanel.IsEnabled>
+                  <MultiBinding Converter="{StaticResource BooleanOrConverter}">
+                    <Binding Path="IsChecked"
+                             ElementName="RB_Direction_FixedCustom" />
+                    <Binding Path="IsChecked"
+                             ElementName="RB_Direction_CanRotateAroundHorizontalAxis" />
+                  </MultiBinding>
+                </StackPanel.IsEnabled>
+                <Label Margin="10,0,0,0"
+                       VerticalAlignment="Center"
+                       Content="水平角度：" />
+                <myt:NumericUpDown Height="20"
+                                   Width="60"
+                                   MinValue="-360"
+                                   MaxValue="360"
+                                   Value="{Binding YawAngle, Mode=TwoWay}" />
+              </StackPanel>
+              <StackPanel Grid.Row="5"
+                          Grid.Column="1"
+                          Orientation="Horizontal">
+                <StackPanel x:Name="SP_Direction_Pitch"
+                            Orientation="Horizontal">
+                  <StackPanel.IsEnabled>
+                    <MultiBinding Converter="{StaticResource BooleanOrConverter}">
+                      <Binding Path="IsChecked"
+                               ElementName="RB_Direction_FixedCustom" />
+                      <Binding Path="IsChecked"
+                               ElementName="RB_Direction_CanRotateAroundVerticalAxis" />
+                    </MultiBinding>
+                  </StackPanel.IsEnabled>
+                  <Label Margin="10,0,0,0"
+                         VerticalAlignment="Center"
+                         Content="垂直角度：" />
+                  <myt:NumericUpDown Height="20"
+                                     Width="60"
+                                     MinValue="-90"
+                                     MaxValue="90"
+                                     Value="{Binding PitchAngle, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Label Margin="10,0,0,0"
+                         VerticalAlignment="Center"
+                         Content="滚转角度：" />
+                  <myt:NumericUpDown Height="20"
+                                     Width="60"
+                                     MinValue="-360"
+                                     MaxValue="360"
+                                     Value="{Binding RollAngle, Mode=TwoWay}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </GroupBox>
+          <GroupBox Header="背景色">
+            <Grid Grid.IsSharedSizeScope="True">
+              <Grid.RowDefinitions>
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <RadioButton Grid.Row="0"
+                           Grid.Column="0"
+                           Content="默认"
+                           GroupName="BackgroundColorMode"
+                           IsChecked="{Binding Path=BackgroundColorMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:BackgroundColorMode.Default}}" />
+              <RadioButton Grid.Row="1"
+                           Grid.Column="0"
+                           Content="透明"
+                           GroupName="BackgroundColorMode"
+                           IsChecked="{Binding Path=BackgroundColorMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:BackgroundColorMode.Transparent}}" />
+              <RadioButton Grid.Row="2"
+                           Grid.Column="0"
+                           Content="黑色"
+                           GroupName="BackgroundColorMode"
+                           IsChecked="{Binding Path=BackgroundColorMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:BackgroundColorMode.Black}}" />
+              <RadioButton Grid.Row="3"
+                           Grid.Column="0"
+                           Content="平均色"
+                           GroupName="BackgroundColorMode"
+                           IsChecked="{Binding Path=BackgroundColorMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:BackgroundColorMode.Average}}" />
+              <RadioButton x:Name="RB_BackgroundColorMode_Custom"
+                           Grid.Row="4"
+                           Grid.Column="0"
+                           Content="自定义"
+                           GroupName="BackgroundColorMode"
+                           IsChecked="{Binding Path=BackgroundColorMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static local:BackgroundColorMode.Custom}}" />
+              <StackPanel Grid.Row="4"
+                          Grid.Column="1"
+                          Orientation="Horizontal">
+                <TextBox Width="120"
+                         Text="{Binding ColorString, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsChecked, ElementName=RB_BackgroundColorMode_Custom, Mode=OneWay, TargetNullValue=False}">
+                  <TextBox.Background>
+                    <Binding Converter="{StaticResource TrueFalseConverter}"
+                             Path="IsCustomColorError"
+                             Mode="OneWay">
+                      <Binding.ConverterParameter>
+                        <x:Array Type="SolidColorBrush">
+                          <SolidColorBrush Color="Pink" />
+                          <SolidColorBrush Color="White" />
+                        </x:Array>
+                      </Binding.ConverterParameter>
+                    </Binding>
+                  </TextBox.Background>
+                </TextBox>
+                <Label Margin="10,0,0,0"
+                       Content="当前颜色：" />
+                <myt:ColorDisplayer Color="{Binding CurrentColor, Mode=OneWay}" />
+              </StackPanel>
+            </Grid>
+          </GroupBox>
+          <GroupBox Header="杂项">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+                <RowDefinition SharedSizeGroup="_" />
+              </Grid.RowDefinitions>
+              <Label Grid.Row="0"
+                     Grid.Column="0"
+                     Content="尺寸：" />
+              <StackPanel Grid.Row="0"
+                          Grid.Column="1"
+                          Orientation="Horizontal">
+                <myt:NumericUpDown Width="100"
+                                   Height="20"
+                                   MinValue="1"
+                                   MaxValue="256"
+                                   Value="{Binding PixelPerBlock, Mode=TwoWay}" />
+                <Label Padding="5,0,0,0"
+                       VerticalAlignment="Center"
+                       Content="像素每米" />
+              </StackPanel>
+              <Label Grid.Row="1"
+                     Grid.Column="0"
+                     Content="光照：" />
+              <StackPanel Grid.Row="1"
+                          Grid.Column="1"
+                          Orientation="Horizontal">
+                <CheckBox x:Name="CB_Misc_BlockLight"
+                          Margin="0,0,5,0"
+                          Content="方块光"
+                          IsChecked="{Binding IsBlockLightEnabled, Mode=TwoWay}" />
+                <myt:NumericUpDown Width="40"
+                                   Height="20"
+                                   MinValue="0"
+                                   MaxValue="15"
+                                   Value="{Binding BlockLight, Mode=TwoWay}"
+                                   IntegerMode="True"
+                                   IsEnabled="{Binding IsChecked, ElementName=CB_Misc_BlockLight, Mode=OneWay, TargetNullValue=False}" />
+                <CheckBox x:Name="CB_Misc_SkyLight"
+                          Margin="10,0,5,0"
+                          Content="天空光"
+                          IsChecked="{Binding IsSkyLightEnabled, Mode=TwoWay}" />
+                <myt:NumericUpDown Width="40"
+                                   Height="20"
+                                   MinValue="0"
+                                   MaxValue="15"
+                                   Value="{Binding SkyLight, Mode=TwoWay}"
+                                   IntegerMode="True"
+                                   IsEnabled="{Binding IsChecked, ElementName=CB_Misc_SkyLight, Mode=OneWay, TargetNullValue=False}" />
+              </StackPanel>
+              <Label Grid.Row="2"
+                     Grid.Column="0"
+                     Content="相对偏移量：" />
+              <StackPanel Grid.Row="2"
+                          Grid.Column="1"
+                          Orientation="Horizontal">
+                <Label Padding="0,0,5,0"
+                       VerticalAlignment="Center"
+                       Content="X" />
+                <myt:NumericUpDown Width="80"
+                                   Height="20"
+                                   MinValue="-1048576"
+                                   MaxValue="1048576"
+                                   Value="{Binding OffsetX, Mode=TwoWay}"
+                                   Step="{Binding Value, ElementName=NUD_Offset_Step}" />
+                <Label Padding="10,0,5,0"
+                       VerticalAlignment="Center"
+                       Content="Y" />
+                <myt:NumericUpDown Width="80"
+                                   Height="20"
+                                   MinValue="-1048576"
+                                   MaxValue="1048576"
+                                   Value="{Binding OffsetY, Mode=TwoWay}"
+                                   Step="{Binding Value, ElementName=NUD_Offset_Step}" />
+                <Label Padding="10,0,5,0"
+                       VerticalAlignment="Center"
+                       Content="Z" />
+                <myt:NumericUpDown Width="80"
+                                   Height="20"
+                                   MinValue="-1048576"
+                                   MaxValue="1048576"
+                                   Value="{Binding OffsetZ, Mode=TwoWay}"
+                                   Step="{Binding Value, ElementName=NUD_Offset_Step}" />
+                <Label Padding="10,0,5,0"
+                       VerticalAlignment="Center"
+                       Content="步长" />
+                <myt:NumericUpDown x:Name="NUD_Offset_Step"
+                                   Width="80"
+                                   Height="20"
+                                   MinValue="-1048576"
+                                   MaxValue="1048576"
+                                   Value="0.125"
+                                   Step="0.125" />
+              </StackPanel>
+            </Grid>
+          </GroupBox>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+    <GridSplitter Grid.Row="0"
+                  Grid.Column="1"
+                  HorizontalAlignment="Left"
+                  Width="5" />
+    <DockPanel Grid.Row="0"
+               Grid.Column="1"
+               Margin="5,0,0,0">
+      <DockPanel DockPanel.Dock="Bottom">
+        <Label DockPanel.Dock="Left"
+               Content="{Binding Zoom, ElementName=ZI_LargeImage}"
+               Padding="2"
+               ContentStringFormat="N2"
+               Grid.Column="0"
+               Width="35" />
+        <Button DockPanel.Dock="Right"
+                Content="重置位置"
+                Click="B_ResetPos_Click" />
+        <Button DockPanel.Dock="Right"
+                Content="重置缩放"
+                Click="B_ResetZoom_Click" />
+        <Slider Value="{Binding Zoom, ElementName=ZI_LargeImage}"
+                Maximum="{Binding MaxZoom, ElementName=ZI_LargeImage}"
+                Minimum="{Binding MinZoom, ElementName=ZI_LargeImage}"
+                IsSnapToTickEnabled="True"
+                TickFrequency="0.05"
+                DockPanel.Dock="Left" />
+      </DockPanel>
+      <Grid>
+        <myt:ZoomableImage x:Name="ZI_LargeImage"
+                           Source="{Binding BitmapSource}" />
+        <Label x:Name="L_LargeImageLoading"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Visibility="Collapsed">
+          <Label.Content>
+            <Binding Path="IsProcessing"
+                     Mode="OneWay"
+                     Converter="{StaticResource TrueFalseConverter}">
+              <Binding.ConverterParameter>
+                <x:Array Type="{x:Type sys:String}">
+                  <sys:String>加载中</sys:String>
+                  <x:Null />
+                </x:Array>
+              </Binding.ConverterParameter>
+            </Binding>
+          </Label.Content>
+        </Label>
+      </Grid>
+    </DockPanel>
+    <GridSplitter Grid.Row="1"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="2"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Top"
+                  Height="5"
+                  Width="Auto" />
+    <Grid Grid.Row="1"
+          Grid.Column="0"
+          Grid.ColumnSpan="2">
+      <Grid.RowDefinitions>
+        <RowDefinition />
+        <RowDefinition Height="20" />
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition />
+        <ColumnDefinition Width="80" />
+        <ColumnDefinition Width="80" />
+        <ColumnDefinition Width="80" />
+      </Grid.ColumnDefinitions>
+      <TextBox x:Name="TB_Output"
+               Grid.Row="0"
+               Grid.Column="0"
+               Grid.ColumnSpan="4"
+               IsReadOnly="True"
+               Margin="0,5,0,0"
+               TextWrapping="Wrap"
+               VerticalScrollBarVisibility="Auto" />
+      <Label Grid.Row="1"
+             Grid.Column="0"
+             Content="" />
+      <Button Grid.Row="1"
+              Grid.Column="1"
+              Content="清空"
+              Click="B_Clear_Click" />
+      <Button Grid.Row="1"
+              Grid.Column="2"
+              Content="保存"
+              Click="B_Save_Click" />
+      <Button Grid.Row="1"
+              Grid.Column="3"
+              Content="复制"
+              Click="B_Copy_Click" />
+    </Grid>
+  </Grid>
+</Window>
