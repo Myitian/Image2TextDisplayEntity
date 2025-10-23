@@ -9,6 +9,6 @@ WPF UI (Chinese)\
 WPF 界面（中文）
 ## Dependency
 ### Image2TextDisplayEntity
-.NET Standard 2.1
+.NET Standard 2.1 / .NET 9.0
 ### Image2TextDisplayEntity.WPF
-.NET 8.0
+.NET 9.0 Windows

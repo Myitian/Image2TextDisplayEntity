@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Image2TextDisplayEntity;
@@ -24,8 +24,9 @@ public struct TextDisplayEntityMetadata
     /// <param name="sb">String builder to save the nbt</param>
     /// <param name="raw">BGR24 pixels</param>
     /// <param name="meta">Metadata</param>
+    /// <param name="compress">Compressed format</param>
     /// <returns>length of text part</returns>
-    public static int Create(StringBuilder sb, ReadOnlySpan<byte> raw, ref TextDisplayEntityMetadata meta)
+    public static int Create(StringBuilder sb, ReadOnlySpan<byte> raw, ref readonly TextDisplayEntityMetadata meta, bool compress = true)
     {
         sb.Append("{id:'minecraft:text_display'");
 
@@ -70,21 +71,47 @@ public struct TextDisplayEntityMetadata
 
         sb.Append(",text:'[");
 
-        int lenA = sb.Length;
+        int len0 = sb.Length;
         ReadOnlySpan<Pixel> pixels = MemoryMarshal.Cast<byte, Pixel>(raw);
-        if (pixels.Length > 0)
+        Pixel prev = new();
+        for (int i = 0, pos = 0; i < pixels.Length; i++)
         {
-            sb.Append($"{{\"text\":\"⬛\",\"color\":\"#{pixels[0].R:X2}{pixels[0].G:X2}{pixels[0].B:X2}\"}}");
-            foreach (Pixel p in pixels[1..])
+            Pixel p = pixels[i];
+            if (compress)
             {
-                sb.Append($",{{\"text\":\"⬛\",\"color\":\"#{p.R:X2}{p.G:X2}{p.B:X2}\"}}");
+                if (i > 0 && prev == p)
+                {
+                    sb.Append('⬛');
+                    continue;
+                }
+                if (pos > 0)
+                    AppendColor(sb.Append("\",\"color\":\""), prev, compress).Append("\"}");
+                if (i > 0)
+                    sb.Append(',');
+                sb.Append("{\"text\":\"⬛");
+                prev = p;
+                pos++;
+            }
+            else
+            {
+                if (i > 0)
+                    sb.Append(',');
+                AppendColor(sb.Append("{\"text\":\"⬛\",\"color\":\""), p, compress).Append("\"}");
             }
         }
-        int lenB = sb.Length;
+        if (compress && pixels.Length > 0)
+            AppendColor(sb.Append("\",\"color\":\""), prev, compress).Append("\"}");
 
         sb.Append("]'}");
+        return sb.Length - len0 + pixels.Length * 2;
 
-        return 2 + lenB - lenA + pixels.Length * 2;
+        static StringBuilder AppendColor(StringBuilder sb, Pixel p, bool compress)
+        {
+            if (compress && Pixel.ShorterNames.TryGetValue(p, out string? name))
+                return sb.Append(name);
+            else
+                return sb.Append($"#{p.R:X2}{p.G:X2}{p.B:X2}");
+        }
     }
 }
 

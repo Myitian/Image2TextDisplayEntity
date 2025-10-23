@@ -55,16 +55,29 @@
                 IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}"
                 Click="B_Generate_Click" />
         <Button DockPanel.Dock="Right"
+                Margin="0,0,5,0"
                 Width="160"
                 Content="生成一箱（包含多层）"
                 IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}"
-                Click="B_GenerateBox_Click" />
+                Click="B_GenerateContainer_Click" />
         <myt:NumericUpDown DockPanel.Dock="Right"
                            Width="40"
                            Height="20"
                            MaxValue="27"
                            MinValue="1"
-                           Value="{Binding ChestLayerCount, Mode=TwoWay}" />
+                           Value="{Binding ContainerLayerCount, Mode=TwoWay}" />
+        <Button DockPanel.Dock="Right"
+                Margin="0,0,5,0"
+                Width="160"
+                Content="生成一潜影盒（包含多箱）"
+                IsEnabled="{Binding IsProcessing, Converter={StaticResource BooleanNotConverter}}"
+                Click="B_GenerateShulkerBox_Click" />
+        <myt:NumericUpDown DockPanel.Dock="Right"
+                           Width="40"
+                           Height="20"
+                           MaxValue="27"
+                           MinValue="1"
+                           Value="{Binding ShulkerBoxContainerCount, Mode=TwoWay}" />
       </DockPanel>
       <ScrollViewer VerticalScrollBarVisibility="Auto"
                     HorizontalScrollBarVisibility="Auto">
@@ -206,12 +219,18 @@
                                    IntegerMode="True" />
                 <Label Content="层" />
                 <Button Margin="5,0,0,0"
-                        Width="30"
+                        Width="35"
+                        Content="---"
+                        Click="B_MinusShulkerBox_Click" />
+                <Button Width="30"
                         Content="--"
-                        Click="B_MinusChest_Click" />
+                        Click="B_MinusContainer_Click" />
                 <Button Width="30"
                         Content="++"
-                        Click="B_AddChest_Click" />
+                        Click="B_AddContainer_Click" />
+                <Button Width="35"
+                        Content="+++"
+                        Click="B_AddShulkerBox_Click" />
               </StackPanel>
             </Grid>
           </GroupBox>
@@ -436,8 +455,8 @@
                           Orientation="Horizontal">
                 <myt:NumericUpDown Width="100"
                                    Height="20"
-                                   MinValue="1"
-                                   MaxValue="256"
+                                   MinValue="0.0001"
+                                   MaxValue="1048576"
                                    Value="{Binding PixelPerBlock, Mode=TwoWay}" />
                 <Label Padding="5,0,0,0"
                        VerticalAlignment="Center"
@@ -585,6 +604,7 @@
         <RowDefinition Height="20" />
       </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
         <ColumnDefinition />
         <ColumnDefinition Width="80" />
         <ColumnDefinition Width="80" />
@@ -593,24 +613,28 @@
       <TextBox x:Name="TB_Output"
                Grid.Row="0"
                Grid.Column="0"
-               Grid.ColumnSpan="4"
+               Grid.ColumnSpan="5"
                IsReadOnly="True"
                Margin="0,5,0,0"
                TextWrapping="Wrap"
                VerticalScrollBarVisibility="Auto" />
       <Label Grid.Row="1"
              Grid.Column="0"
-             Content="" />
+             Margin="5,0,0,0"
+             Content="SNBT字符数量：" />
+      <Label Grid.Row="1"
+             Grid.Column="1"
+             Content="{Binding Text.Length, ElementName=TB_Output}" />
       <Button Grid.Row="1"
-              Grid.Column="1"
+              Grid.Column="2"
               Content="清空"
               Click="B_Clear_Click" />
       <Button Grid.Row="1"
-              Grid.Column="2"
+              Grid.Column="3"
               Content="保存"
               Click="B_Save_Click" />
       <Button Grid.Row="1"
-              Grid.Column="3"
+              Grid.Column="4"
               Content="复制"
               Click="B_Copy_Click" />
     </Grid>

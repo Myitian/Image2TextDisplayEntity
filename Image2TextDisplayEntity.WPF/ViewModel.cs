@@ -27,75 +27,69 @@ public class ViewModel : INotifyPropertyChanged
     }
     public Color? CachedAverageColor;
 
-    private bool _isProcessing = false;
     public bool IsProcessing
     {
-        get => _isProcessing;
+        get => field;
         set
         {
-            _isProcessing = value;
+            field = value;
             OnPropertyChanged(nameof(IsProcessing));
         }
-    }
+    } = false;
 
-    private string _imagePath = "";
     public string ImagePath
     {
-        get => _imagePath;
+        get => field;
         set
         {
-            _imagePath = value;
+            field = value;
             OnPropertyChanged(nameof(ImagePath));
         }
-    }
+    } = "";
 
-    private BitmapSource? _bitmapSource = null;
     public BitmapSource? BitmapSource
     {
-        get => _bitmapSource;
+        get => field;
         set
         {
-            _bitmapSource = value;
+            field = value;
             BitmapForProcess = null;
             OnPropertyChanged(nameof(BitmapSource));
         }
-    }
+    } = null;
 
-    private string _currentImagePath = "";
     public string CurrentImagePath
     {
-        get => _currentImagePath;
+        get => field;
         set
         {
-            _currentImagePath = value;
+            field = value;
             OnPropertyChanged(nameof(CurrentImagePath));
         }
-    }
+    } = "";
 
-    private BitmapSource? _bitmapForProcess = null;
     public BitmapSource? BitmapForProcess
     {
-        get => _bitmapForProcess;
+        get => field;
         set
         {
-            _bitmapForProcess = value;
+            field = value;
             CachedAverageColor = null;
             OnPropertyChanged(nameof(BitmapForProcess));
         }
-    }
+    } = null;
 
-    private bool _needCrop = false;
     public bool NeedCrop
     {
-        get => _needCrop;
+        get => field;
         set
         {
-            _needCrop = value;
+            field = value;
             BitmapForProcess = null;
             OnPropertyChanged(nameof(NeedCrop));
             OnPropertyChanged(nameof(MaxLayer));
         }
-    }
+    } = false;
 
     private int _targetWidth = 1;
     public int TargetWidth
@@ -117,276 +111,262 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
-    private bool _keepScale = true;
     public bool KeepScale
     {
-        get => _keepScale;
+        get => field;
         set
         {
-            _keepScale = value;
+            field = value;
             OnPropertyChanged(nameof(KeepScale));
         }
-    }
+    } = true;
 
-    private CutMode _cutMode = CutMode.All;
     public CutMode CutMode
     {
-        get => _cutMode;
+        get => field;
         set
         {
-            _cutMode = value;
+            field = value;
             OnPropertyChanged(nameof(CutMode));
         }
-    }
+    } = CutMode.All;
 
-    private int _layerHeight = 1;
     public int LayerHeight
     {
-        get => _layerHeight;
+        get => field;
         set
         {
-            _layerHeight = value;
+            field = value;
             OnPropertyChanged(nameof(LayerHeight));
             OnPropertyChanged(nameof(MaxLayer));
         }
-    }
+    } = 1;
 
     public int MaxLayer => ((NeedCrop ? TargetHeight : BitmapSource?.PixelHeight) + LayerHeight - 1) / LayerHeight ?? 1;
 
-    private int _layer = 1;
     public int Layer
     {
-        get => _layer;
+        get => field;
         set
         {
-            _layer = value;
+            field = value;
             OnPropertyChanged(nameof(Layer));
         }
-    }
+    } = 1;
 
-    private string _spawnEggName = "{\"text\":\"\",\"italic\":false,\"extra\":[{\"text\":\"文本\",\"color\":\"#66CCFF\",\"bold\":true},{\"text\":\"展示\",\"color\":\"white\"},{\"text\":\"实体\",\"color\":\"#39C5BB\"}]}";
     public string SpawnEggName
     {
-        get => _spawnEggName;
+        get => field;
         set
         {
-            _spawnEggName = value;
+            field = value;
             OnPropertyChanged(nameof(SpawnEggName));
         }
-    }
+    } = "{\"text\":\"文本展示实体\",\"italic\":false}";
 
-    private Direction _direction = Direction.FixedAxis;
     public Direction Direction
     {
-        get => _direction;
+        get => field;
         set
         {
-            _direction = value;
+            field = value;
             OnPropertyChanged(nameof(Direction));
         }
-    }
+    } = Direction.FixedAxis;
 
-    private HorizontalDirection _horizontalDirection = HorizontalDirection.South;
     public HorizontalDirection HorizontalDirection
     {
-        get => _horizontalDirection;
+        get => field;
         set
         {
-            _horizontalDirection = value;
+            field = value;
             YawAngle = ((int)value + 3) % 4 * 90;
             OnPropertyChanged(nameof(HorizontalDirection));
         }
-    }
+    } = HorizontalDirection.South;
 
-    private VerticalDirection _verticalDirection = VerticalDirection.Side;
     public VerticalDirection VerticalDirection
     {
-        get => _verticalDirection;
+        get => field;
         set
         {
-            _verticalDirection = value;
+            field = value;
             PitchAngle = ((int)value - 1) * 90;
             OnPropertyChanged(nameof(VerticalDirection));
         }
-    }
+    } = VerticalDirection.Side;
 
-    private float _yawAngle = 0;
     public float YawAngle
     {
-        get => _yawAngle;
+        get => field;
         set
         {
-            _yawAngle = value;
+            field = value;
             OnPropertyChanged(nameof(YawAngle));
         }
-    }
+    } = 0;
 
-    private float _pitchAngle = 0;
     public float PitchAngle
     {
-        get => _pitchAngle;
+        get => field;
         set
         {
-            _pitchAngle = value;
+            field = value;
             OnPropertyChanged(nameof(PitchAngle));
         }
-    }
+    } = 0;
 
-    private float _rollAngle = 0;
     public float RollAngle
     {
-        get => _rollAngle;
+        get => field;
         set
         {
-            _rollAngle = value;
+            field = value;
             OnPropertyChanged(nameof(RollAngle));
         }
-    }
+    } = 0;
 
-    private BackgroundColorMode _backgroundColorMode = BackgroundColorMode.Default;
     public BackgroundColorMode BackgroundColorMode
     {
-        get => _backgroundColorMode;
+        get => field;
         set
         {
-            _backgroundColorMode = value;
+            field = value;
             UpdateColor(value);
             OnPropertyChanged(nameof(BackgroundColorMode));
         }
-    }
+    } = BackgroundColorMode.Default;
 
-    private string _colorString = "";
     public string ColorString
     {
-        get => _colorString;
+        get => field;
         set
         {
-            _colorString = value;
+            field = value;
             UpdateColor(BackgroundColorMode.Custom);
             OnPropertyChanged(nameof(ColorString));
         }
-    }
+    } = "";
 
-    private Color _currentColor = DefaultColor;
     public Color CurrentColor
     {
-        get => _currentColor;
+        get => field;
         set
         {
-            _currentColor = value;
+            field = value;
             OnPropertyChanged(nameof(CurrentColor));
         }
-    }
+    } = DefaultColor;
 
-    private bool _isCustomColorError = false;
     public bool IsCustomColorError
     {
-        get => _isCustomColorError;
+        get => field;
         set
         {
-            _isCustomColorError = value;
+            field = value;
             OnPropertyChanged(nameof(IsCustomColorError));
         }
-    }
+    } = false;
 
-    private float _pixelPerBlock = 8;
     public float PixelPerBlock
     {
-        get => _pixelPerBlock;
+        get => field;
         set
         {
-            _pixelPerBlock = value;
+            field = value;
             OnPropertyChanged(nameof(PixelPerBlock));
         }
-    }
+    } = 8;
 
-    private bool _isBlockLightEnabled = false;
     public bool IsBlockLightEnabled
     {
-        get => _isBlockLightEnabled;
+        get => field;
         set
         {
-            _isBlockLightEnabled = value;
+            field = value;
             OnPropertyChanged(nameof(IsBlockLightEnabled));
         }
-    }
+    } = false;
 
-    private int _blockLight = 15;
     public int BlockLight
     {
-        get => _blockLight;
+        get => field;
         set
         {
-            _blockLight = value;
+            field = value;
             OnPropertyChanged(nameof(BlockLight));
         }
-    }
+    } = 15;
 
-    private bool _isSkyLightEnabled = false;
     public bool IsSkyLightEnabled
     {
-        get => _isSkyLightEnabled;
+        get => field;
         set
         {
-            _isSkyLightEnabled = value;
+            field = value;
             OnPropertyChanged(nameof(IsSkyLightEnabled));
         }
-    }
+    } = false;
 
-    private int _skyLight = 15;
     public int SkyLight
     {
-        get => _skyLight;
+        get => field;
         set
         {
-            _skyLight = value;
+            field = value;
             OnPropertyChanged(nameof(SkyLight));
         }
-    }
+    } = 15;
 
-    private float _offsetX = 0;
     public float OffsetX
     {
-        get => _offsetX;
+        get => field;
         set
         {
-            _offsetX = value;
+            field = value;
             OnPropertyChanged(nameof(OffsetX));
         }
-    }
+    } = 0;
 
-    private float _offsetY = 0;
     public float OffsetY
     {
-        get => _offsetY;
+        get => field;
         set
         {
-            _offsetY = value;
+            field = value;
             OnPropertyChanged(nameof(OffsetY));
         }
-    }
+    } = 0;
 
-    private float _offsetZ = 0;
     public float OffsetZ
     {
-        get => _offsetZ;
+        get => field;
         set
         {
-            _offsetZ = value;
+            field = value;
             OnPropertyChanged(nameof(OffsetZ));
         }
-    }
+    } = 0;
 
-    private int _chestLayerCount = 27;
-    public int ChestLayerCount
+    public int ContainerLayerCount
     {
-        get => _chestLayerCount;
+        get => field;
         set
         {
-            _chestLayerCount = value;
-            OnPropertyChanged(nameof(ChestLayerCount));
+            field = value;
+            OnPropertyChanged(nameof(ContainerLayerCount));
         }
-    }
+    } = 27;
+
+    public int ShulkerBoxContainerCount
+    {
+        get => field;
+        set
+        {
+            field = value;
+            OnPropertyChanged(nameof(ShulkerBoxContainerCount));
+        }
+    } = 4;
 
     /// <summary>
     /// 属性已改变

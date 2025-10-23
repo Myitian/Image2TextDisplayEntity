@@ -15,8 +15,10 @@ namespace Image2TextDisplayEntity.WPF;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     public ViewModel ViewModel { get; } = new();
-    private readonly UTF8Encoding utf8 = new(false);
-    private readonly SearchValues<char> snbtSingleQuoteEscape = SearchValues.Create("'\\");
+    public const int TextViewLimit = 8 * 1024 * 1024;
+    public static readonly UTF8Encoding UTF8 = new(false);
+    public static readonly SearchValues<char> SNBTSingleQuoteEscape = SearchValues.Create("'\\");
+    private readonly StringBuilder sb = new(131072);
 
     public MainWindow()
     {
@@ -48,11 +50,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             ViewModel.IsProcessing = true;
-            string fullPath = Path.GetFullPath(ViewModel.ImagePath);
-            BitmapImage bmp = new(new(fullPath));
-            FormatConvertedBitmap bgr24bmp = new(bmp, PixelFormats.Bgr24, null, 0);
-            ViewModel.BitmapSource = bgr24bmp;
-            ViewModel.CurrentImagePath = fullPath;
+            if (Uri.TryCreate(ViewModel.ImagePath, UriKind.RelativeOrAbsolute, out Uri? uri))
+            {
+                BitmapImage bmp = new(uri);
+                FormatConvertedBitmap bgr24bmp = new(bmp, PixelFormats.Bgr24, null, 0);
+                ViewModel.BitmapSource = bgr24bmp;
+                ViewModel.CurrentImagePath = uri.ToString();
+            }
+            else
+            {
+                MessageBox.Show("Uri格式错误");
+            }
         }
         catch (Exception ex)
         {
@@ -63,14 +71,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ViewModel.IsProcessing = false;
         }
     }
-    private void B_MinusChest_Click(object sender, RoutedEventArgs e)
+    private void B_MinusShulkerBox_Click(object sender, RoutedEventArgs e)
     {
-        int newLayer = ViewModel.Layer - ViewModel.ChestLayerCount;
+        int newLayer = ViewModel.Layer - ViewModel.ContainerLayerCount * ViewModel.ShulkerBoxContainerCount;
         ViewModel.Layer = Math.Clamp(newLayer, 1, ViewModel.MaxLayer);
     }
-    private void B_AddChest_Click(object sender, RoutedEventArgs e)
+    private void B_MinusContainer_Click(object sender, RoutedEventArgs e)
     {
-        int newLayer = ViewModel.Layer + ViewModel.ChestLayerCount;
+        int newLayer = ViewModel.Layer - ViewModel.ContainerLayerCount;
+        ViewModel.Layer = Math.Clamp(newLayer, 1, ViewModel.MaxLayer);
+    }
+    private void B_AddContainer_Click(object sender, RoutedEventArgs e)
+    {
+        int newLayer = ViewModel.Layer + ViewModel.ContainerLayerCount;
+        ViewModel.Layer = Math.Clamp(newLayer, 1, ViewModel.MaxLayer);
+    }
+    private void B_AddShulkerBox_Click(object sender, RoutedEventArgs e)
+    {
+        int newLayer = ViewModel.Layer + ViewModel.ContainerLayerCount * ViewModel.ShulkerBoxContainerCount;
         ViewModel.Layer = Math.Clamp(newLayer, 1, ViewModel.MaxLayer);
     }
     private unsafe void B_Generate_Click(object sender, RoutedEventArgs e)
@@ -78,19 +96,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             ViewModel.IsProcessing = true;
-            StringBuilder sb = new();
-            int lenTDE = NBTGenerator.Create(sb, ViewModel);
-            int lenName = utf8.GetByteCount(ViewModel.SpawnEggName) + ViewModel.SpawnEggName.AsSpan().Count("'\\");
-            if (sb.Length >= 2097152)
-            {
-                MessageBox.Show($"字符串过大！\n当前值：{sb.Length}\n程序不会显示长度大于等于2097152的字符串", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-            TB_Output.Text = sb.ToString();
-            if (lenTDE > ushort.MaxValue)
-                MessageBox.Show($"像素过多，导致字符串过大！\n当前值：{lenTDE}\n大于等于65536字节的NBT字符串会无法传输至服务器", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-            else if (lenName > ushort.MaxValue)
-                MessageBox.Show($"刷怪蛋物品名称过长，导致字符串过大！\n当前值：{lenName}\n大于等于65536字节的NBT字符串会无法传输至服务器", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            sb.Clear();
+            (string? message, bool showString) = NBTGenerator.Create(sb, ViewModel);
+            if (message is not null)
+                MessageBox.Show(message, "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (showString)
+                TB_Output.Text = sb.ToString();
+            else
+                sb.Clear();
         }
         catch (Exception ex)
         {
@@ -101,60 +114,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ViewModel.IsProcessing = false;
         }
     }
-    private void B_GenerateBox_Click(object sender, RoutedEventArgs e)
+    private void B_GenerateContainer_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             ViewModel.IsProcessing = true;
-            StringBuilder sb = new("{Items:[");
-            int startLayer = ViewModel.CutMode switch
-            {
-                CutMode.Horizontal
-                    => ViewModel.Layer,
-                _
-                    => 1
-            };
-            int maxLayer = ViewModel.CutMode switch
-            {
-                CutMode.Horizontal
-                    => Math.Min(ViewModel.Layer + ViewModel.ChestLayerCount - 1, ViewModel.MaxLayer),
-                _
-                    => 1
-            };
-            for (int i = startLayer; i <= maxLayer; i++)
-            {
-                if (i != startLayer)
-                    sb.Append(',');
-                sb.Append($"{{Count:1b,Slot:{i - startLayer}b,id:cod_spawn_egg,tag:");
-                int lenTDE = NBTGenerator.Create(sb,
-                    ViewModel,
-                    i,
-                    ViewModel.OffsetY + (i - 1) * (float)NUD_Offset_Step.Value);
-                int lenName = utf8.GetByteCount(ViewModel.SpawnEggName) + ViewModel.SpawnEggName.AsSpan().Count("'\\");
-                if (sb.Length >= 2097152)
-                {
-                    MessageBox.Show($"字符串过大！\n当前值：{sb.Length}\n程序不会显示长度大于等于2097152的字符串", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-                else if (lenTDE > ushort.MaxValue)
-                {
-                    MessageBox.Show($"像素过多，导致字符串过大！\n当前值：{lenTDE}\n大于等于65536字节的NBT字符串会无法传输至服务器", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                else if (lenName > ushort.MaxValue)
-                {
-                    MessageBox.Show($"刷怪蛋物品名称过长，导致字符串过大！\n当前值：{lenName}\n大于等于65536字节的NBT字符串会无法传输至服务器", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                sb.Append('}');
-            }
-            sb.Append("]}");
-            if (sb.Length >= 2097152)
-            {
-                MessageBox.Show($"字符串过大！\n当前值：{sb.Length}\n程序不会显示长度大于等于2097152的字符串", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-            TB_Output.Text = sb.ToString();
+            sb.Clear();
+            (string? message, bool showString) = NBTGenerator.CreateContainer(sb, ViewModel);
+            if (message is not null)
+                MessageBox.Show(message, "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (showString)
+                TB_Output.Text = sb.ToString();
         }
         catch (Exception ex)
         {
@@ -165,6 +135,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ViewModel.IsProcessing = false;
         }
     }
+    private void B_GenerateShulkerBox_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ViewModel.IsProcessing = true;
+            sb.Clear();
+            (string? message, bool showString) = NBTGenerator.CreateShulkerBox(sb, ViewModel);
+            if (message is not null)
+                MessageBox.Show(message, "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (showString)
+                TB_Output.Text = sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.StackTrace, ex.Message);
+        }
+        finally
+        {
+            ViewModel.IsProcessing = false;
+        }
+    }
+
     private void B_ResetPos_Click(object sender, RoutedEventArgs e)
     {
         ZI_LargeImage.SetPos((ZI_LargeImage.ContainerWidth - ZI_LargeImage.ContentWidth) / 2,
@@ -192,11 +184,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             string? dir = Path.GetDirectoryName(path);
             if (dir is not null)
                 Directory.CreateDirectory(dir);
-            File.WriteAllText(path, TB_Output.Text, utf8);
+            File.WriteAllText(path, TB_Output.Text, UTF8);
         }
     }
     private void B_Copy_Click(object sender, RoutedEventArgs e)
     {
-        Clipboard.SetText(TB_Output.Text);
+        do
+        {
+            try
+            {
+                Clipboard.SetDataObject(TB_Output.Text);
+                break;
+            }
+            catch
+            {
+
+            }
+        }
+        while (true);
     }
 }
